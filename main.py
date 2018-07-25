@@ -23,6 +23,9 @@ class CountdownTimer(Label):
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
 
+    def stop(self):
+        self.anim.stop(self)
+
     def on_a(self, instance, value):
         self.text = str(math.floor(value/60)) + ':' + str(round(value%60, 1))
 

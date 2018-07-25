@@ -30,45 +30,55 @@ class CountdownTimer(Label):
         self.text = str(math.floor(value/60)) + ':' + str(round(value%60, 1))
 
 
-class EscapeRoom(App):
-    def build(self):
+class EscapeRoom(BoxLayout):
+
+    def __init__(self, **kwargs):
+        super(EscapeRoom, self).__init__(**kwargs)
         #Window.fullscreen = True
-        layout = BoxLayout(orientation='horizontal')
-        layout2 = BoxLayout(orientation='vertical')
-        layout.add_widget(layout2)
+        self.orientation='horizontal'
+        self.layout2 = BoxLayout(orientation='vertical')
+        self.add_widget(self.layout2)
 
-        countdown = CountdownTimer(font_size=50,
+        self.countdown = CountdownTimer(font_size=50,
                                    bold=True)
-        countdown.start()
+        self.countdown.start()
 
-        img = Image(source='WHO.jpg',
+        self.img = Image(source='WHO.jpg',
                     allow_stretch=True)
 
-        passwordBox = FloatLayout()
+        self.passwordBox = FloatLayout()
 
-        layout.add_widget(countdown)
-        layout2.add_widget(img)
-        layout2.add_widget(passwordBox)
+        self.add_widget(self.countdown)
+        self.layout2.add_widget(self.img)
+        self.layout2.add_widget(self.passwordBox)
 
-        textinput = TextInput(hint_text='Password',
+        self.textinput = TextInput(hint_text='Password',
                               multiline=False,
                               size_hint=(.7, .1),
                               pos_hint={'x': .15, 'y': .5})
 
-        def CheckPassword(self):
-            if textinput.text == '123':
-                btn.text = 'lala'
-
-
-        btn = Button(text='CHECK',
+        self.btn = Button(text='CHECK',
                      size_hint=(.4, .1),
-                     pos_hint={'x': .3, 'y': .3},
-                     on_press=CheckPassword)
+                     pos_hint={'x': .3, 'y': .3})
 
-        passwordBox.add_widget(textinput)
-        passwordBox.add_widget(btn)
+        self.passwordBox.add_widget(self.textinput)
+        self.passwordBox.add_widget(self.btn)
 
-        return layout
+
+class Main(App):
+
+    global stage
+    stage = 2
+
+    def build(self):
+        def switch(stage):
+            switcher = {
+                0: "zero",
+                1: "one",
+                2: EscapeRoom(),
+            }
+            return switcher.get(stage, "0")
+        return switch(stage)
 
 if __name__ == "__main__":
-    EscapeRoom().run()
+    Main().run()

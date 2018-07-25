@@ -37,7 +37,8 @@ class EscapeRoom(App):
         layout2 = BoxLayout(orientation='vertical')
         layout.add_widget(layout2)
 
-        countdown = CountdownTimer()
+        countdown = CountdownTimer(font_size=50,
+                                   bold=True)
         countdown.start()
 
         img = Image(source='WHO.jpg',
@@ -54,9 +55,15 @@ class EscapeRoom(App):
                               size_hint=(.7, .1),
                               pos_hint={'x': .15, 'y': .5})
 
+        def CheckPassword(self):
+            if textinput.text == '123':
+                btn.text = 'lala'
+
+
         btn = Button(text='CHECK',
                      size_hint=(.4, .1),
-                     pos_hint={'x': .3, 'y': .3})
+                     pos_hint={'x': .3, 'y': .3},
+                     on_press=CheckPassword)
 
         passwordBox.add_widget(textinput)
         passwordBox.add_widget(btn)

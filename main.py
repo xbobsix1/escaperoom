@@ -3,11 +3,6 @@ from kivy.core.window import Window
 
 from escaperoom.stage3 import EscapeRoom
 
-
-def next_stage():
-    stage += 1
-
-
 class Main(App):
 
     global stage

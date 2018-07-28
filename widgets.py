@@ -1,7 +1,7 @@
 from kivy.properties import StringProperty, NumericProperty
 from kivy.animation import Animation
-from kivy.uix.label import Label
-from kivy.uix.video import Video
+from kivy.animation import AnimationTransition
+from kivy.uix.progressbar import ProgressBar
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 import math
@@ -34,12 +34,21 @@ class KeyboardListener(Widget):
 class CountdownTimer(Widget):
     a = NumericProperty(3600)
     text = StringProperty('0')
+
+    def __init__(self, fail_callback, **kwargs):
+        super().__init__(**kwargs)
+        self.fail_callback = fail_callback
+
     def start(self):
         Animation.cancel_all(self)
         self.anim = Animation(a=0, duration=self.a)
 
         def finish_callback(animation, incr_crude_clock):
-            incr_crude_clock.text = "00."
+            if self.a > 0:
+                incr_crude_clock.text = self.text
+            else:
+                self.text = '00:00:00'
+                self.fail_callback()
 
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
@@ -48,7 +57,32 @@ class CountdownTimer(Widget):
         self.anim.stop(self)
 
     def on_a(self, instance, value):
+        minutes = str(math.floor(value / 60))
         seconds = str(round(value % 60, 2))
+
+        if len(minutes) == 1:
+            minutes = '0' + minutes
+
+        if seconds[1] == '.':
+            seconds = '0' + seconds
         if len(seconds) < 5:
             seconds += '0'
-        self.text = str(math.floor(value / 60)) + ':' + seconds
+
+        self.text = minutes + ':' + seconds
+
+
+class CustomProgressBar(ProgressBar):
+    a = NumericProperty(0)
+    t = NumericProperty(2)
+
+    def __init__(self, callback, **kwargs):
+        super(CustomProgressBar, self).__init__(**kwargs)
+        self.progress = Animation(value=20 + 20 * self.a, t='out_circ', duration=self.t)
+
+        self.progress.start(self)
+        self.callback = callback
+
+        def finish_callback(animation, progress):
+            self.callback()
+
+        self.progress.bind(on_complete=finish_callback)

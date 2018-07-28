@@ -4,17 +4,14 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.video import Video
-from escaperoom.widgets import CountdownTimer
-from escaperoom.widgets import KeyboardListener
-from escaperoom.widgets import CustomProgressBar
+from widgets import CountdownTimer
+from widgets import KeyboardListener
+from widgets import CustomProgressBar
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 from kivy.clock import Clock
 from kivy.properties import NumericProperty
-from kivy.animation import Animation
-from kivy.animation import AnimationTransition
-import escaperoom.custom_lib
 import re
 from kivy.core.window import Window
 

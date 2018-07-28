@@ -1,6 +1,5 @@
 from kivy.properties import StringProperty, NumericProperty
 from kivy.animation import Animation
-from kivy.animation import AnimationTransition
 from kivy.uix.progressbar import ProgressBar
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -33,7 +32,7 @@ class KeyboardListener(Widget):
 
 class CountdownTimer(Widget):
     a = NumericProperty(3600)
-    text = StringProperty('0')
+    text = StringProperty('60:00.00')
 
     def __init__(self, fail_callback, **kwargs):
         super().__init__(**kwargs)
@@ -47,7 +46,7 @@ class CountdownTimer(Widget):
             if self.a > 0:
                 incr_crude_clock.text = self.text
             else:
-                self.text = '00:00:00'
+                self.text = '00:00.00'
                 self.fail_callback()
 
         self.anim.bind(on_complete=finish_callback)
@@ -59,21 +58,25 @@ class CountdownTimer(Widget):
     def on_a(self, instance, value):
         minutes = str(math.floor(value / 60))
         seconds = str(round(value % 60, 2))
+        try:
+            if len(minutes) == 1:
+                minutes = '0' + minutes
 
-        if len(minutes) == 1:
-            minutes = '0' + minutes
-
-        if seconds[1] == '.':
-            seconds = '0' + seconds
-        if len(seconds) < 5:
-            seconds += '0'
+            if seconds[1] == '.':
+                seconds = '0' + seconds
+            if len(seconds) < 5:
+                seconds += '0'
+            if seconds == '0':
+                seconds = '00.00'
+        except:
+            pass
 
         self.text = minutes + ':' + seconds
 
 
 class CustomProgressBar(ProgressBar):
     a = NumericProperty(0)
-    t = NumericProperty(2)
+    t = NumericProperty(10)
 
     def __init__(self, callback, **kwargs):
         super(CustomProgressBar, self).__init__(**kwargs)

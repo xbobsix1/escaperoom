@@ -24,7 +24,7 @@ class IntroLogo(Screen):
         self.logo = Image(source='WHO.jpg')
         self.add_widget(self.logo)
 
-        ## Specific function that unbinds a KeyboardsListener and then switches to next screen
+        # Specific function that unbinds a KeyboardsListener and then switches to next screen
         def switch():
             self.keyboardListener.unbind()
             self.remove_widget(self.keyboardListener)
@@ -148,10 +148,6 @@ class RapportScreen(Screen):
         self.layout2.add_widget(self.triple_bond)
         self.layout2.add_widget(self.triple_bond_input)
 
-        def switch():
-            # sm.switch_to(xxxxx)
-            print('222')
-            pass
 
         def check_info(RapportScreen):
 
@@ -210,7 +206,6 @@ class ProgressScreen(Screen):
         Clock.schedule_interval(update, 1.0 / 15.0)
 
         def switch():
-            print('3333')
             if self.a < 4:
                 sm.current = sm.previous()
                 sm.remove_widget(self)
@@ -249,35 +244,39 @@ class WinScreen(Screen):
         self.add_widget(self.layout)
         self.add_widget(self.winText)
 
-        def switch():
+        def restart():
             self.keyboardListener.unbind()
             self.remove_widget(self.keyboardListener)
+            timer.a = 3600
             sm.switch_to(IntroLogo())
 
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
-        self.keyboardListener = KeyboardListener('enter', switch)
+        self.keyboardListener = KeyboardListener('enter', restart)
         self.add_widget(self.keyboardListener)
+
 
 class FailScreen(Screen):
     def __init__(self, **kwargs):
         super(FailScreen, self).__init__(**kwargs)
         self.layout = FloatLayout()
-        self.winText = Label(text='YOU LOSE\nTIME IS UP\n' + timer.text, font_size=70)
+        self.failText = Label(text='YOU LOSE\nTIME IS UP\n' + timer.text, font_size=70)
         self.add_widget(self.layout)
-        self.add_widget(self.winText)
+        self.add_widget(self.failText)
 
-        def switch():
+        def restart():
             self.keyboardListener.unbind()
             self.remove_widget(self.keyboardListener)
+            timer.a = 3600
             sm.switch_to(IntroLogo())
 
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
-        self.keyboardListener = KeyboardListener('enter', switch)
+        self.keyboardListener = KeyboardListener('enter', restart)
         self.add_widget(self.keyboardListener)
 
 
 def fail_switch():
     sm.switch_to(FailScreen())
+
 
 # Window.fullscreen = True
 

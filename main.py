@@ -1,20 +1,22 @@
 from kivy.app import App
+from kivy.config import Config
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
+from kivy.uix.behaviors import focus
 from kivy.uix.video import Video
-from widgets import CountdownTimer
-from widgets import KeyboardListener
-from widgets import CustomProgressBar
+from widgets import *
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 from kivy.clock import Clock
 from kivy.properties import NumericProperty
 import re
+import keyboard
 from kivy.core.window import Window
 
+Config.set('kivy', 'exit_on_escape', '0')
 
 class IntroLogo(Screen):
     def __init__(self, **kwargs):
@@ -24,15 +26,13 @@ class IntroLogo(Screen):
         self.logo = Image(source='WHO.jpg')
         self.add_widget(self.logo)
 
-        # Specific function that unbinds a KeyboardsListener and then switches to next screen
+        # Specific function that removes a KeyboardsListener and then switches to next screen
         def switch():
-            self.keyboardListener.unbind()
-            self.remove_widget(self.keyboardListener)
+            keyboard.remove_hotkey(self.hotkey)
             sm.switch_to(VideoScreen())
 
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
-        self.keyboardListener = KeyboardListener('enter', switch)
-        self.add_widget(self.keyboardListener)
+        self.hotkey = keyboard.add_hotkey('enter', switch)
 
 
 class VideoScreen(Screen):
@@ -87,20 +87,30 @@ class PasswordScreen(Screen):
                                    size_hint=(.7, .1),
                                    pos_hint={'x': .15, 'y': .5})
 
-        def check_password(self):
-            if sm.get_screen(sm.current).textinput.text == '123':
-                switch()
+        self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0))
 
+        def check_password(PasswordScreen):
+            if self.textinput.text == '123':
+                switch()
+            else:
+                self.passwordBox_wrong.color = (1, 0, 0, 1)
+
+        # Check button and passwordbox
         self.btn = Button(text='CHECK',
                           size_hint=(.4, .1),
                           pos_hint={'x': .3, 'y': .3},
                           on_press=check_password)
 
         self.passwordBox.add_widget(self.textinput)
+        self.passwordBox.add_widget(self.passwordBox_wrong)
         self.passwordBox.add_widget(self.btn)
 
         def switch():
+            keyboard.remove_hotkey(self.enter_hotkey)
             sm.switch_to(RapportScreen())
+
+        # Hotkey
+        self.enter_hotkey = keyboard.add_hotkey('enter', check_password, args=[self])
 
 
 class RapportScreen(Screen):
@@ -120,34 +130,45 @@ class RapportScreen(Screen):
         def update(dt):
             self.countdown.text = timer.text
 
-        # Update our ocuntdown-text every
+        # Update our countdown-text every
         Clock.schedule_interval(update, 1.0 / 15.0)
 
+        def set_focus_next(RapportScreen):
+            f = focus.FocusBehavior.get_focus_next(RapportScreen)
+            f.focus = True
+
         # Adding the layout of the entire left side
-        self.agent = Label(text='DISEAS AGENT', font_size=20)
-        self.agent_input = TextInput(multiline=False)
+        self.agent = Label(text='DISEASE AGENT', font_size=20)
+        self.agent_input = TextInput(multiline=False, write_tab=False)
+        self.agent_wrong = Label(text='The disease agent was incorrect', color=(1, 1, 1, 0))
 
         self.zero_name = Label(text='PATIENT ZERO NAME', font_size=20)
-        self.zero_name_input = TextInput(multiline=False)
+        self.zero_name_input = TextInput(multiline=False, write_tab=False)
+        self.zero_name_wrong = Label(text="Patient Zero's name was incorrect", color=(1, 1, 1, 0))
 
         self.structure = Label(text='MOLECULE STRUCTURE', font_size=20)
 
         self.double_bond = Label(text='DOUBLE BONDS', font_size=20)
-        self.double_bond_input = TextInput(multiline=False)
+        self.double_bond_input = TextInput(multiline=False, input_type='number', write_tab=False)
+        self.double_bond_wrong = Label(text="The number of double bonds is incorrect", color=(1, 1, 1, 0))
 
         self.triple_bond = Label(text='TRIPLE BONDS', font_size=20)
-        self.triple_bond_input = TextInput(multiline=False)
+        self.triple_bond_input = TextInput(multiline=False, input_type='number', write_tab=False)
+        self.triple_bond_wrong = Label(text="The number of triple bonds is incorrect", color=(1, 1, 1, 0))
 
         self.layout2.add_widget(self.agent)
         self.layout2.add_widget(self.agent_input)
+        self.layout2.add_widget(self.agent_wrong)
         self.layout2.add_widget(self.zero_name)
         self.layout2.add_widget(self.zero_name_input)
+        self.layout2.add_widget(self.zero_name_wrong)
         self.layout2.add_widget(self.structure)
         self.layout2.add_widget(self.double_bond)
         self.layout2.add_widget(self.double_bond_input)
+        self.layout2.add_widget(self.double_bond_wrong)
         self.layout2.add_widget(self.triple_bond)
         self.layout2.add_widget(self.triple_bond_input)
-
+        self.layout2.add_widget(self.triple_bond_wrong)
 
         def check_info(RapportScreen):
 
@@ -155,32 +176,39 @@ class RapportScreen(Screen):
 
             if self.agent_input.text.lower() == '123':
                 correct_answers += 1
+                self.agent_wrong.color = (1, 0, 0, 0)
             else:
-                self.agent_input.border = [4, 4, 4, 4]
+                self.agent_wrong.color = (1, 0, 0, 1)
 
             if re.search(r'\b123\b', self.zero_name_input.text) is not None:
                 correct_answers += 1
+                self.zero_name_wrong.color = (1, 0, 0, 0)
             else:
-                self.zero_name_input.border = [4, 4, 4, 4]
+                self.zero_name_wrong.color = (1, 0, 0, 1)
 
             if self.double_bond_input.text == '123':
                 correct_answers += 1
+                self.double_bond_wrong.color = (1, 0, 0, 0)
             else:
-                self.double_bond_input.border = [4, 4, 4, 4]
+                self.double_bond_wrong.color = (1, 0, 0, 1)
 
             if self.triple_bond_input.text == '123':
                 correct_answers += 1
+                self.triple_bond_wrong.color = (1, 0, 0, 0)
             else:
-                self.triple_bond_input.border = [4, 4, 4, 4]
+                self.triple_bond_wrong.color = (1, 0, 0, 1)
 
             sm.add_widget(ProgressScreen(name='progress', a=correct_answers))
             sm.current = 'progress'
-            # (WIP) REPLACE THE LEFT LAYOUT FOR 10 SECONDS WHILE ANIMATING A PROGRESS BAR. IF AFTER THE FACT THERE
-            # ARE 4 CORRECT ANSWERS, THEN PROCCED TO VICTORY SCREEN. IF THERE IS AN INCORRECT ANSWER,
-            # MARK THE INCORRECT INFORMATION AS RED AND BOLD. REMOVE ON FOCUS
 
         self.check_button = Button(text='GENERATE', font_size=40, on_press=check_info)
         self.layout2.add_widget(self.check_button)
+
+        #Hotkey
+        self.agent_input.bind(on_text_validate=set_focus_next)
+        self.zero_name_input.bind(on_text_validate=set_focus_next)
+        self.double_bond_input.bind(on_text_validate=set_focus_next)
+        self.triple_bond_input.bind(on_text_validate=check_info)
 
 
 class ProgressScreen(Screen):
@@ -240,19 +268,18 @@ class WinScreen(Screen):
     def __init__(self, **kwargs):
         super(WinScreen, self).__init__(**kwargs)
         self.layout = FloatLayout()
-        self.winText = Label(text='YOU WIN\nTIME LEFT\n' + timer.text, font_size=70)
+        self.winText = Label(text='Congratulation\nThe Cure is mixed\nTime ' + timer.text, font_size=70)
         self.add_widget(self.layout)
         self.add_widget(self.winText)
 
         def restart():
-            self.keyboardListener.unbind()
-            self.remove_widget(self.keyboardListener)
+            keyboard.remove_hotkey(self.hotkey)
             timer.a = 3600
             sm.switch_to(IntroLogo())
 
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
-        self.keyboardListener = KeyboardListener('enter', restart)
-        self.add_widget(self.keyboardListener)
+        self.hotkey = keyboard.add_hotkey('ctrl+shift+r', restart)
+
 
 
 class FailScreen(Screen):
@@ -264,15 +291,12 @@ class FailScreen(Screen):
         self.add_widget(self.failText)
 
         def restart():
-            self.keyboardListener.unbind()
-            self.remove_widget(self.keyboardListener)
+            keyboard.remove_hotkey(self.hotkey)
             timer.a = 3600
             sm.switch_to(IntroLogo())
 
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
-        self.keyboardListener = KeyboardListener('enter', restart)
-        self.add_widget(self.keyboardListener)
-
+        self.hotkey = keyboard.add_hotkey('ctrl+shift+r', restart)
 
 def fail_switch():
     sm.switch_to(FailScreen())

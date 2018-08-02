@@ -4,30 +4,7 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 import math
-
-
-class KeyboardListener(Widget):
-    def __init__(self, key, callback, **args):
-        super(KeyboardListener, self).__init__()
-        self.key = key
-        self.callback = callback
-        self.args = args
-        self.activated = True
-        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
-        self._keyboard.bind(on_key_down=self._on_keyboard_down)
-
-    def _keyboard_closed(self):
-        self._keyboard.unbind(on_key_down=self._on_keyboard_down)
-        self._keyboard = None
-
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        if self.activated and keycode[1] == 'enter':
-            return self.callback(**self.args)
-
-        return True
-
-    def unbind(self, **kwargs):
-        self.activated = False
+import keyboard
 
 
 class CountdownTimer(Widget):
@@ -46,30 +23,39 @@ class CountdownTimer(Widget):
             if self.a > 0:
                 incr_crude_clock.text = self.text
             else:
-                self.text = '00:00.00'
+                self.text = '00:00'
                 self.fail_callback()
 
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
 
+        this = self
+        def add_time(delta_time):
+            print(self.a)
+            self.anim.stop(self)
+            self.a = self.a + delta_time
+            self.anim.start(self)
+            print(self.a)
+
+        # Add hotkeys
+        keyboard.add_hotkey('ctrl+g+1', add_time, args=[-300])
+        keyboard.add_hotkey('ctrl+g+2', add_time, args=[300])
+        keyboard.add_hotkey('ctrl+p+1', self.anim.stop, args=[self])
+        keyboard.add_hotkey('ctrl+p+2', self.anim.start, args=[self])
+
     def stop(self):
+        keyboard.remove_all_hotkeys()
         self.anim.stop(self)
 
     def on_a(self, instance, value):
         minutes = str(math.floor(value / 60))
-        seconds = str(round(value % 60, 2))
-        try:
-            if len(minutes) == 1:
-                minutes = '0' + minutes
+        seconds = str(math.floor(value % 60))
 
-            if seconds[1] == '.':
-                seconds = '0' + seconds
-            if len(seconds) < 5:
-                seconds += '0'
-            if seconds == '0':
-                seconds = '00.00'
-        except:
-            pass
+        if len(minutes) == 1:
+            minutes = '0' + minutes
+
+        if len(seconds) == 1:
+            seconds = '0' + seconds
 
         self.text = minutes + ':' + seconds
 

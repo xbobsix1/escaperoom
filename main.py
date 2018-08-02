@@ -56,7 +56,6 @@ class VideoScreen(Screen):
 class PasswordScreen(Screen):
     def __init__(self, **kwargs):
         super(PasswordScreen, self).__init__(**kwargs)
-        this = self
         self.layout = BoxLayout(orientation='horizontal')
         self.add_widget(self.layout)
         self.layout2 = BoxLayout(orientation='vertical')
@@ -85,7 +84,8 @@ class PasswordScreen(Screen):
         self.textinput = TextInput(hint_text='Password',
                                    multiline=False,
                                    size_hint=(.7, .1),
-                                   pos_hint={'x': .15, 'y': .5})
+                                   pos_hint={'x': .15, 'y': .5},
+                                   focus=True)
 
         self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0))
 
@@ -139,7 +139,7 @@ class RapportScreen(Screen):
 
         # Adding the layout of the entire left side
         self.agent = Label(text='DISEASE AGENT', font_size=20)
-        self.agent_input = TextInput(multiline=False, write_tab=False)
+        self.agent_input = TextInput(multiline=False, write_tab=False, focus=True)
         self.agent_wrong = Label(text='The disease agent was incorrect', color=(1, 1, 1, 0))
 
         self.zero_name = Label(text='PATIENT ZERO NAME', font_size=20)
@@ -240,6 +240,17 @@ class ProgressScreen(Screen):
             else:
                 timer.stop()
                 sm.switch_to(EndVideoScreen())
+        self.calculating = Label(text='Calculating', color=(1, 1, 1, 1))
+        self.layout2.add_widget(self.calculating)
+
+        def calc_anim(RapportScreen):
+            t = self.calculating.text
+            if '...' in t:
+                self.calculating.text = 'Calculating'
+            else:
+                self.calculating.text = t + '.'
+
+        Clock.schedule_interval(calc_anim, 1.0 / 2.0)
 
         self.progressBar = CustomProgressBar(switch, a=self.a)
         self.layout2.add_widget(self.progressBar)

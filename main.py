@@ -1,5 +1,4 @@
 from kivy.app import App
-from kivy.config import Config
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
@@ -16,13 +15,21 @@ import re
 import keyboard
 from kivy.core.window import Window
 
+from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
+Config.set('kivy', 'keyboard_mode', 'system')
+Config.set('graphics', 'fullscreen', 'fake')
+Config.set('graphics', 'allow_screensaver', '0')
+
+# Window.fullscreen = True
 
 class IntroLogo(Screen):
     def __init__(self, **kwargs):
         super(IntroLogo, self).__init__(**kwargs)
 
         # Add starting Logo
+        self.logo = Image(source='WHO.jpg')
+        self.add_widget(self.logo)
         self.logo = Image(source='WHO.jpg')
         self.add_widget(self.logo)
 
@@ -58,7 +65,7 @@ class PasswordScreen(Screen):
         super(PasswordScreen, self).__init__(**kwargs)
         self.layout = BoxLayout(orientation='horizontal')
         self.add_widget(self.layout)
-        self.layout2 = BoxLayout(orientation='vertical')
+        self.layout2 = BoxLayout(orientation='vertical', padding=[0, 20])
         self.layout.add_widget(self.layout2)
 
         # Start the global timer and add a Label to EscapeRoom > layout
@@ -76,19 +83,20 @@ class PasswordScreen(Screen):
         self.img = Image(source='WHO.jpg',
                          allow_stretch=True)
 
-        self.passwordBox = FloatLayout()
+        self.passwordBox = BoxLayout(orientation='vertical', padding=[40, 100])
 
         self.layout2.add_widget(self.img)
         self.layout2.add_widget(self.passwordBox)
 
         self.textinput = TextInput(hint_text='Password',
                                    multiline=False,
-                                   size_hint=(.7, .1),
-                                   pos_hint={'x': .15, 'y': .5},
-                                   focus=True)
+                                   size_hint=(.7, None),
+                                   height=50,
+                                   pos_hint={'center_x': .5, 'y': .5})
 
-        self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0))
+        self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0), pos_hint={'center_x': .5, 'y': .2}, valign='top')
 
+        # Switch screen if password is correct. Else, show error-label
         def check_password(PasswordScreen):
             if self.textinput.text == '123':
                 switch()
@@ -97,8 +105,9 @@ class PasswordScreen(Screen):
 
         # Check button and passwordbox
         self.btn = Button(text='CHECK',
-                          size_hint=(.4, .1),
-                          pos_hint={'x': .3, 'y': .3},
+                          size_hint=(.4, None),
+                            height=50,
+                          pos_hint={'center_x': .5, 'center_y': .5},
                           on_press=check_password)
 
         self.passwordBox.add_widget(self.textinput)
@@ -111,6 +120,9 @@ class PasswordScreen(Screen):
 
         # Hotkey
         self.enter_hotkey = keyboard.add_hotkey('enter', check_password, args=[self])
+
+        # Set focus on text-input at start of screen
+        self.textinput.focus = True
 
 
 class RapportScreen(Screen):
@@ -139,7 +151,7 @@ class RapportScreen(Screen):
 
         # Adding the layout of the entire left side
         self.agent = Label(text='DISEASE AGENT', font_size=20)
-        self.agent_input = TextInput(multiline=False, write_tab=False, focus=True)
+        self.agent_input = TextInput(multiline=False, write_tab=False)
         self.agent_wrong = Label(text='The disease agent was incorrect', color=(1, 1, 1, 0))
 
         self.zero_name = Label(text='PATIENT ZERO NAME', font_size=20)
@@ -170,6 +182,7 @@ class RapportScreen(Screen):
         self.layout2.add_widget(self.triple_bond_input)
         self.layout2.add_widget(self.triple_bond_wrong)
 
+        # Check if info is correct. If yes, add to correct-counter, if no, show specific error message. When done counting, procced to ProgressScreen
         def check_info(RapportScreen):
 
             correct_answers = 0
@@ -201,14 +214,16 @@ class RapportScreen(Screen):
             sm.add_widget(ProgressScreen(name='progress', a=correct_answers))
             sm.current = 'progress'
 
+        # Add check-button
         self.check_button = Button(text='GENERATE', font_size=40, on_press=check_info)
         self.layout2.add_widget(self.check_button)
 
-        #Hotkey
+        #Switch focus on enter. If at the end of screen, check info
         self.agent_input.bind(on_text_validate=set_focus_next)
         self.zero_name_input.bind(on_text_validate=set_focus_next)
         self.double_bond_input.bind(on_text_validate=set_focus_next)
         self.triple_bond_input.bind(on_text_validate=check_info)
+
 
 
 class ProgressScreen(Screen):
@@ -233,6 +248,7 @@ class ProgressScreen(Screen):
         # Update our ocuntdown-text every
         Clock.schedule_interval(update, 1.0 / 15.0)
 
+        # If NOT all answers are correct, go to previous screen, and remove self. If all ARE correct, stop timer and go to EndVideoScreen.
         def switch():
             if self.a < 4:
                 sm.current = sm.previous()
@@ -243,6 +259,7 @@ class ProgressScreen(Screen):
         self.calculating = Label(text='Calculating', color=(1, 1, 1, 1))
         self.layout2.add_widget(self.calculating)
 
+        # Animate calculating text (Calculating -> Calculating. -> Calculating.. -> Calculating...)
         def calc_anim(RapportScreen):
             t = self.calculating.text
             if '...' in t:
@@ -252,6 +269,7 @@ class ProgressScreen(Screen):
 
         Clock.schedule_interval(calc_anim, 1.0 / 2.0)
 
+        # Add animated progressbar
         self.progressBar = CustomProgressBar(switch, a=self.a)
         self.layout2.add_widget(self.progressBar)
 
@@ -269,8 +287,7 @@ class EndVideoScreen(Screen):
         self.video.bind(eos=switch)
         self.add_widget(self.video)
 
-        # When the screen enters view, play the video
-
+    # When the screen enters view, play the video
     def on_enter(self, *args):
         self.video.state = 'play'
 
@@ -283,6 +300,7 @@ class WinScreen(Screen):
         self.add_widget(self.layout)
         self.add_widget(self.winText)
 
+        # Reset timer and go to start screen
         def restart():
             keyboard.remove_hotkey(self.hotkey)
             timer.a = 3600
@@ -313,13 +331,11 @@ def fail_switch():
     sm.switch_to(FailScreen())
 
 
-# Window.fullscreen = True
-
 # Add a global timer, that keeps track of the countdown between Screens
 global timer
 timer = CountdownTimer(fail_switch)
 
-# Add a screen manager and a starting screen
+# Add a screen manager and a starting screen. Remove Transition-animations
 sm = ScreenManager()
 sm.transition = NoTransition()
 sm.add_widget(IntroLogo())

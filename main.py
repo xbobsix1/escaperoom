@@ -5,15 +5,16 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.behaviors import focus
 from kivy.uix.video import Video
-from widgets import *
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 from kivy.clock import Clock
 from kivy.properties import NumericProperty
+from widgets import *
 import re
 import keyboard
 from kivy.core.window import Window
+from gpiozero import LED
 
 from kivy.config import Config
 Config.set('kivy', 'exit_on_escape', '0')
@@ -300,6 +301,8 @@ class WinScreen(Screen):
         self.add_widget(self.layout)
         self.add_widget(self.winText)
 
+        led.blink(5, 5, 1)
+
         # Reset timer and go to start screen
         def restart():
             keyboard.remove_hotkey(self.hotkey)
@@ -330,6 +333,9 @@ class FailScreen(Screen):
 def fail_switch():
     sm.switch_to(FailScreen())
 
+# Setup Raspberry GPIO output
+global led
+led = LED(11)
 
 # Add a global timer, that keeps track of the countdown between Screens
 global timer

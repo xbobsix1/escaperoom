@@ -322,6 +322,8 @@ class FailScreen(Screen):
         self.add_widget(self.layout)
         self.add_widget(self.failText)
 
+        led.blink(5, 5, 1)
+
         def restart():
             keyboard.remove_hotkey(self.hotkey)
             timer.a = 3600
@@ -344,7 +346,7 @@ timer = CountdownTimer(fail_switch)
 # Add a screen manager and a starting screen. Remove Transition-animations
 sm = ScreenManager()
 sm.transition = NoTransition()
-sm.add_widget(IntroLogo())
+sm.add_widget(ProgressScreen())
 
 
 class Main(App):

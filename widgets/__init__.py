@@ -8,7 +8,7 @@ import keyboard
 
 
 class CountdownTimer(Widget):
-    a = NumericProperty(3600)
+    a = NumericProperty(5)
     text = StringProperty('60:00.00')
 
     def __init__(self, fail_callback, **kwargs):

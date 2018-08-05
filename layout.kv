@@ -1,0 +1,35 @@
+<BgScreen>:
+    canvas.before:
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: './Background.png'
+
+<CountdownText>:
+    font_name: './Orbitron/Veger(light).ttf'
+    font_size: 80
+    bold: True
+    line_height: 0
+
+<Label>:
+    font_name: './Orbitron/Veger(light).ttf'
+
+
+<CustomTextInput>:
+    background_normal: './Textbox.png'
+    background_active: './Textbox.png'
+    background_disabled_normal: './Textbox.png'
+
+    padding_x: 20
+    padding_y: [self.height / 2.0 - (self.line_height / 2.0) * len(self._lines), 0]
+
+    font_size: 30
+
+    cursor_color: [1, 1, 1, 1]
+    cursor_width: 5
+
+    hint_text_color: [0.7, 0.7, 0.7, 1]
+
+    foreground_color: [1, 1, 1, 1]
+    font_name: './Orbitron/Orbitron-Regular.ttf'
+

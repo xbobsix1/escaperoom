@@ -1,4 +1,20 @@
+import os
+
+os.environ["KIVY_IMAGE"] = "pil"
+
+from kivy.config import Config
+
+Config.set('kivy', 'exit_on_escape', '0')
+Config.set('kivy', 'keyboard_mode', 'system')
+Config.set('graphics', 'fullscreen', '1')
+Config.set('graphics', 'allow_screensaver', '0')
+Config.set('graphics', 'width', '1920')
+Config.set('graphics', 'height', '1080')
+
 from kivy.app import App
+from kivy.lang.builder import Builder
+from kivy.loader import Loader
+from kivy import resources
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
@@ -7,6 +23,7 @@ from kivy.uix.behaviors import focus
 from kivy.uix.video import Video
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, NoTransition
 from kivy.clock import Clock
 from kivy.properties import NumericProperty
@@ -14,25 +31,33 @@ from widgets import *
 import re
 import keyboard
 from kivy.core.window import Window
-from gpiozero import LED
+from kivy.cache import Cache
+Cache._categories['kv.image']['limit'] = 0
+Cache._categories['kv.texture']['limit'] = 0
 
-from kivy.config import Config
-Config.set('kivy', 'exit_on_escape', '0')
-Config.set('kivy', 'keyboard_mode', 'system')
-Config.set('graphics', 'fullscreen', 'fake')
-Config.set('graphics', 'allow_screensaver', '0')
+# from gpiozero import LED
 
-# Window.fullscreen = True
 
-class IntroLogo(Screen):
+# Retrieve data files
+Builder.load_file('./layout.kv')
+gif = Loader.image('./timer_frame.gif')
+logo = Loader.image('./WHO.png')
+check = Loader.image('./Check.png')
+check_hover = Loader.image('./Check Hover.png')
+
+
+class IntroLogo(BgScreen):
     def __init__(self, **kwargs):
         super(IntroLogo, self).__init__(**kwargs)
 
+        self.layout = AnchorLayout(padding=[100])
+        self.add_widget(self.layout)
+
         # Add starting Logo
-        self.logo = Image(source='WHO.jpg')
-        self.add_widget(self.logo)
-        self.logo = Image(source='WHO.jpg')
-        self.add_widget(self.logo)
+        self.logo = Image(source='WHO.png',
+                          allow_stretch=True,
+                          keep_ratio=True)
+        self.layout.add_widget(self.logo)
 
         # Specific function that removes a KeyboardsListener and then switches to next screen
         def switch():
@@ -61,18 +86,25 @@ class VideoScreen(Screen):
         self.video.state = 'play'
 
 
-class PasswordScreen(Screen):
+class PasswordScreen(BgScreen):
     def __init__(self, **kwargs):
         super(PasswordScreen, self).__init__(**kwargs)
         self.layout = BoxLayout(orientation='horizontal')
         self.add_widget(self.layout)
-        self.layout2 = BoxLayout(orientation='vertical', padding=[0, 20])
+        self.layout2 = BoxLayout(orientation='vertical', padding=[0, 50])
         self.layout.add_widget(self.layout2)
+        self.layout_count = AnchorLayout(size_hint=(.9, 1))
+        self.layout.add_widget(self.layout_count)
 
         # Start the global timer and add a Label to EscapeRoom > layout
         timer.start()
-        self.countdown = Label(text=timer.text, font_size=50, bold=True)
-        self.layout.add_widget(self.countdown)
+        self.timer_frame = Image(source='timer_frame.gif',
+                                 anim_delay=0.05,
+                                 allow_stretch=True,
+                                 keep_ratio=True)
+        self.layout_count.add_widget(self.timer_frame)
+        self.countdown = CountdownText(text=timer.text)
+        self.layout_count.add_widget(self.countdown)
 
         # Set the countdown-label to be equal to our global timer
         def update(dt):
@@ -81,21 +113,21 @@ class PasswordScreen(Screen):
         # Update our ocuntdown-text every 1/15 seconds
         Clock.schedule_interval(update, 1.0 / 15.0)
 
-        self.img = Image(source='WHO.jpg',
+        self.img = Image(source='WHO.png',
                          allow_stretch=True)
 
-        self.passwordBox = BoxLayout(orientation='vertical', padding=[40, 100])
+        self.passwordBox = FloatLayout()
 
         self.layout2.add_widget(self.img)
         self.layout2.add_widget(self.passwordBox)
 
-        self.textinput = TextInput(hint_text='Password',
-                                   multiline=False,
-                                   size_hint=(.7, None),
-                                   height=50,
-                                   pos_hint={'center_x': .5, 'y': .5})
+        self.textinput = CustomTextInput(hint_text='Password',
+                                         multiline=False,
+                                         size_hint=(.6, .17),
+                                         pos_hint={'center_x': .5, 'y': .55})
 
-        self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0), pos_hint={'center_x': .5, 'y': .2}, valign='top')
+        self.passwordBox_wrong = Label(text='Incorrect password', color=(1, 0, 0, 0), font_size=20, bold=True,
+                                       pos_hint={'center_x': .5, 'y': 0}, valign='top')
 
         # Switch screen if password is correct. Else, show error-label
         def check_password(PasswordScreen):
@@ -105,11 +137,10 @@ class PasswordScreen(Screen):
                 self.passwordBox_wrong.color = (1, 0, 0, 1)
 
         # Check button and passwordbox
-        self.btn = Button(text='CHECK',
-                          size_hint=(.4, None),
-                            height=50,
-                          pos_hint={'center_x': .5, 'center_y': .5},
-                          on_press=check_password)
+        self.btn = ImageButton(on_press=check_password,
+                               size_hint=(.3, None),
+                               keep_ratio=True,
+                               pos_hint={'center_x': .5, 'center_y': .3})
 
         self.passwordBox.add_widget(self.textinput)
         self.passwordBox.add_widget(self.passwordBox_wrong)
@@ -126,18 +157,25 @@ class PasswordScreen(Screen):
         self.textinput.focus = True
 
 
-class RapportScreen(Screen):
+class RapportScreen(BgScreen):
     def __init__(self, **kwargs):
         super(RapportScreen, self).__init__(**kwargs)
         self.layout = BoxLayout(orientation='horizontal')
         self.add_widget(self.layout)
-        self.layout2 = BoxLayout(orientation='vertical', padding=[20, 20])
+        self.layout2 = BoxLayout(orientation='vertical', padding=[180, 80])
         self.layout.add_widget(self.layout2)
+        self.layout_count = AnchorLayout(size_hint=(.9, 1))
+        self.layout.add_widget(self.layout_count)
 
         # Start the global timer and add a Label to EscapeRoom > layout
         timer.start()
-        self.countdown = Label(text=timer.text, font_size=50, bold=True)
-        self.layout.add_widget(self.countdown)
+        self.timer_frame = Image(source='timer_frame.gif',
+                                 anim_delay=0.05,
+                                 allow_stretch=True,
+                                 keep_ratio=True)
+        self.layout_count.add_widget(self.timer_frame)
+        self.countdown = CountdownText(text=timer.text)
+        self.layout_count.add_widget(self.countdown)
 
         # Set the countdown-label to be equal to our global timer
         def update(dt):
@@ -152,22 +190,22 @@ class RapportScreen(Screen):
 
         # Adding the layout of the entire left side
         self.agent = Label(text='DISEASE AGENT', font_size=20)
-        self.agent_input = TextInput(multiline=False, write_tab=False)
-        self.agent_wrong = Label(text='The disease agent was incorrect', color=(1, 1, 1, 0))
+        self.agent_input = CustomTextInput(multiline=False, write_tab=False)
+        self.agent_wrong = Label(text="THE DISEASE AGENT WAS INCORRECT", color=(1, 1, 1, 0))
 
         self.zero_name = Label(text='PATIENT ZERO NAME', font_size=20)
-        self.zero_name_input = TextInput(multiline=False, write_tab=False)
-        self.zero_name_wrong = Label(text="Patient Zero's name was incorrect", color=(1, 1, 1, 0))
+        self.zero_name_input = CustomTextInput(multiline=False, write_tab=False)
+        self.zero_name_wrong = Label(text="PATIENT ZERO'S NAME WAS INCORRECT", color=(1, 1, 1, 0))
 
-        self.structure = Label(text='MOLECULE STRUCTURE', font_size=20)
+        self.structure = Label(text='MOLECULE STRUCTURE', font_size=40)
 
         self.double_bond = Label(text='DOUBLE BONDS', font_size=20)
-        self.double_bond_input = TextInput(multiline=False, input_type='number', write_tab=False)
-        self.double_bond_wrong = Label(text="The number of double bonds is incorrect", color=(1, 1, 1, 0))
+        self.double_bond_input = CustomTextInput(multiline=False, input_type='number', write_tab=False)
+        self.double_bond_wrong = Label(text="THE NUMBER OF DOUBLE BONDS IS INCORRECT", color=(1, 1, 1, 0))
 
         self.triple_bond = Label(text='TRIPLE BONDS', font_size=20)
-        self.triple_bond_input = TextInput(multiline=False, input_type='number', write_tab=False)
-        self.triple_bond_wrong = Label(text="The number of triple bonds is incorrect", color=(1, 1, 1, 0))
+        self.triple_bond_input = CustomTextInput(multiline=False, input_type='number', write_tab=False)
+        self.triple_bond_wrong = Label(text="THE NUMBER OF TRIPLE BONDS IS INCORRECT", color=(1, 1, 1, 0))
 
         self.layout2.add_widget(self.agent)
         self.layout2.add_widget(self.agent_input)
@@ -216,38 +254,23 @@ class RapportScreen(Screen):
             sm.current = 'progress'
 
         # Add check-button
-        self.check_button = Button(text='GENERATE', font_size=40, on_press=check_info)
+        self.check_button = ImageButton(on_press=check_info)
         self.layout2.add_widget(self.check_button)
 
-        #Switch focus on enter. If at the end of screen, check info
+        # Switch focus on enter. If at the end of screen, check info
         self.agent_input.bind(on_text_validate=set_focus_next)
         self.zero_name_input.bind(on_text_validate=set_focus_next)
         self.double_bond_input.bind(on_text_validate=set_focus_next)
         self.triple_bond_input.bind(on_text_validate=check_info)
 
 
-
-class ProgressScreen(Screen):
+class ProgressScreen(BgScreen):
     a = NumericProperty(0)
 
     def __init__(self, **kwargs):
         super(ProgressScreen, self).__init__(**kwargs)
-        self.layout = BoxLayout(orientation='horizontal')
+        self.layout = BoxLayout(orientation='vertical', padding=[350, 300])
         self.add_widget(self.layout)
-        self.layout2 = BoxLayout(orientation='vertical', padding=[20, 20])
-        self.layout.add_widget(self.layout2)
-
-        # Start the global timer and add a Label to EscapeRoom > layout
-        timer.start()
-        self.countdown = Label(text=timer.text, font_size=50, bold=True)
-        self.layout.add_widget(self.countdown)
-
-        # Set the countdown-label to be equal to our global timer
-        def update(dt):
-            self.countdown.text = timer.text
-
-        # Update our ocuntdown-text every
-        Clock.schedule_interval(update, 1.0 / 15.0)
 
         # If NOT all answers are correct, go to previous screen, and remove self. If all ARE correct, stop timer and go to EndVideoScreen.
         def switch():
@@ -257,14 +280,16 @@ class ProgressScreen(Screen):
             else:
                 timer.stop()
                 sm.switch_to(EndVideoScreen())
-        self.calculating = Label(text='Calculating', color=(1, 1, 1, 1))
-        self.layout2.add_widget(self.calculating)
+
+        self.calculating = Label(text='CALCULATING', color=(1, 1, 1, 1), font_size=40,
+                                 font_name='./Orbitron/V-GERB(bold).ttf')
+        self.layout.add_widget(self.calculating)
 
         # Animate calculating text (Calculating -> Calculating. -> Calculating.. -> Calculating...)
         def calc_anim(RapportScreen):
             t = self.calculating.text
             if '...' in t:
-                self.calculating.text = 'Calculating'
+                self.calculating.text = 'CALCULATING'
             else:
                 self.calculating.text = t + '.'
 
@@ -272,7 +297,7 @@ class ProgressScreen(Screen):
 
         # Add animated progressbar
         self.progressBar = CustomProgressBar(switch, a=self.a)
-        self.layout2.add_widget(self.progressBar)
+        self.layout.add_widget(self.progressBar)
 
 
 class EndVideoScreen(Screen):
@@ -293,15 +318,16 @@ class EndVideoScreen(Screen):
         self.video.state = 'play'
 
 
-class WinScreen(Screen):
+class WinScreen(BgScreen):
     def __init__(self, **kwargs):
         super(WinScreen, self).__init__(**kwargs)
         self.layout = FloatLayout()
-        self.winText = Label(text='Congratulation\nThe Cure is mixed\nTime ' + timer.text, font_size=70)
+        self.winText = Label(text='CONGRATULATIONS\n\nTHE CURE IS MIXED\n\nTIME: ' + timer.text, font_size=70,
+                             halign='center')
         self.add_widget(self.layout)
         self.add_widget(self.winText)
 
-        led.blink(5, 5, 1)
+        # led.blink(5, 5, 1)
 
         # Reset timer and go to start screen
         def restart():
@@ -313,16 +339,15 @@ class WinScreen(Screen):
         self.hotkey = keyboard.add_hotkey('ctrl+shift+r', restart)
 
 
-
-class FailScreen(Screen):
+class FailScreen(BgScreen):
     def __init__(self, **kwargs):
         super(FailScreen, self).__init__(**kwargs)
         self.layout = FloatLayout()
-        self.failText = Label(text='YOU LOSE\nTIME IS UP\n' + timer.text, font_size=70)
+        self.failText = Label(text='YOU LOSE\n\nTIME IS UP\n\n' + timer.text, font_size=70, halign='center')
         self.add_widget(self.layout)
         self.add_widget(self.failText)
 
-        led.blink(5, 5, 1)
+        # led.blink(5, 5, 1)
 
         def restart():
             keyboard.remove_hotkey(self.hotkey)
@@ -332,12 +357,14 @@ class FailScreen(Screen):
         # Add custom KeyBoardListener that triggers the switch-function on enter-key
         self.hotkey = keyboard.add_hotkey('ctrl+shift+r', restart)
 
+
 def fail_switch():
     sm.switch_to(FailScreen())
 
+
 # Setup Raspberry GPIO output
-global led
-led = LED(11)
+# global led
+# led = LED(11)
 
 # Add a global timer, that keeps track of the countdown between Screens
 global timer
@@ -346,7 +373,7 @@ timer = CountdownTimer(fail_switch)
 # Add a screen manager and a starting screen. Remove Transition-animations
 sm = ScreenManager()
 sm.transition = NoTransition()
-sm.add_widget(ProgressScreen())
+sm.add_widget(IntroLogo())
 
 
 class Main(App):

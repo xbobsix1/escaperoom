@@ -100,6 +100,7 @@ class PasswordScreen(BgScreen):
         timer.start()
         self.timer_frame = Image(source='timer_frame.gif',
                                  anim_delay=0.05,
+                                 width=600,
                                  allow_stretch=True,
                                  keep_ratio=True)
         self.layout_count.add_widget(self.timer_frame)
